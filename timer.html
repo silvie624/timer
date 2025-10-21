@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5 Minute Timer</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: #121212;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      font-size: 5em;
+    }
+  </style>
+</head>
+<body>
+  <div id="timer">05:00</div>
+
+  <script>
+    let time = 5 * 60; // 5 minutes in seconds
+    const timerEl = document.getElementById('timer');
+
+    const interval = setInterval(() => {
+      const minutes = Math.floor(time / 60);
+      const seconds = time % 60;
+      timerEl.textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      time--;
+
+      if (time < 0) {
+        clearInterval(interval);
+        timerEl.textContent = "TIME'S UP!";
+      }
+    }, 1000);
+  </script>
+</body>
+</html>

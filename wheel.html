@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Spinning Wheel</title>
+<style>
+  :root{
+    --size: 100vmin;
+    --wheel-size: min(480px, 88vw);
+    --bg: #f6f7fb;
+    --accent: #001e60;
+    --text: #fff;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, sans-serif;color:#111}
+  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box}
+  .card{width:100%;max-width:760px;background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(2,6,23,0.08);padding:18px;display:grid;grid-template-columns:1fr 280px;gap:18px;align-items:center}
+  @media (max-width:820px){ .card{grid-template-columns:1fr; } .controls{order:2} }
+  .wheel-wrap{display:flex;align-items:center;justify-content:center}
+  .wheel-viewport{width:var(--wheel-size);height:var(--wheel-size);position:relative;border-radius:50%;overflow:visible}
+  .wheel{
+    width:100%;height:100%;border-radius:50%;position:relative;transform:rotate(0deg);transition:transform 0.6s cubic-bezier(.2,.8,.2,1);
+    box-shadow: 0 8px 24px rgba(2,6,23,0.12) inset;
+  }
+  /* labels container (will hold rotated label elements) */
+  .labels{position:absolute;inset:0;border-radius:50%;pointer-events:none}
+  .label{
+    position:absolute;left:50%;top:10%;transform-origin:0 50%;
+    white-space:nowrap;font-weight:600;font-size:14px;color:var(--text);text-shadow:0 1px 2px rgba(0,0,0,0.45);padding:4px 8px;border-radius:6px;
+    background:rgba(0,0,0,0.15);
+  }
+  /* center button */
+  .center{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;
+    width:36%;max-width:160px;height:36%;max-height:160px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,var(--accent),#003a99);color:var(--text);font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.25);
+  }
+  .pointer{
+    position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:26px solid var(--accent);z-index:8;
+  }
+  .controls{padding:12px}
+  .controls h3{margin:0 0 8px 0;font-size:16px;color:var(--accent)}
+  .controls p{margin:0 0 12px 0;color:#444}
+  .input{display:flex;gap:8px;margin-bottom:10px}
+  .input input{flex:1;padding:8px;border-radius:8px;border:1px solid #e4e6ef}
+  .btn{background:var(--accent);color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:700}
+  .btn.secondary{background:#f1f3f8;color:#001e60;border:1px solid #d8dbe8}
+  .result{margin-top:12px;padding:12px;border-radius:8px;background:#f6f9ff;color:#002b66;font-weight:700;display:none}
+  .small{font-size:13px;color:#666;margin-top:6px}
+  footer{grid-column:1/-1;text-align:center;margin-top:10px;font-size:12px;color:#889}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="application" aria-label="Spinning wheel game">
+      <div class="wheel-wrap" aria-hidden="false">
+        <div class="wheel-viewport">
+          <div class="pointer" aria-hidden="true"></div>
+          <div id="wheel" class="wheel" role="img" aria-label="Wheel"></div>
+          <div class="labels" id="labels"></div>
+          <button id="spin" class="center" aria-live="polite">SPIN</button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <h3>Spinning Wheel</h3>
+        <p>Enter comma-separated labels for the wheel below, or use the defaults.</p>
+
+        <div class="input">
+          <input id="segmentsInput" placeholder="Prize 1, Prize 2, Prize 3, ...">
+          <button id="apply" class="btn secondary">Apply</button>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button id="spinBtn" class="btn">Spin</button>
+          <button id="quickSpin" class="btn secondary">Quick Spin</button>
+        </div>
+
+        <div class="small">You can also pass segments via URL query: <code>?segments=Apple,Banana,Cherry</code></div>
+
+        <div id="result" class="result" role="status" aria-live="polite"></div>
+      </div>
+
+      <footer>Made with ❤️ — Embed with an iframe anywhere</footer>
+    </div>
+  </div>
+
+<script>
+(function(){
+  /* -----------------------
+     Config & helpers
+     ----------------------- */
+  const defaultSegments = ["$5","$10","Try Again","$50","Free Ship","$100","Extra Spin","Mystery"];
+  const defaultColors = [
+    "#FF7F50","#FFB347","#FFD93D","#8BD3DD","#66CDAA","#8FBC8F","#C19AB7","#FF9AA2"
+  ];
+
+  const wheelEl = document.getElementById('wheel');
+  const labelsContainer = document.getElementById('labels');
+  const spinBtnCenter = document.getElementById('spin');
+  const spinBtn = document.getElementById('spinBtn');
+  const quickSpinBtn = document.getElementById('quickSpin');
+  const applyBtn = document.getElementById('apply');
+  const segmentsInput = document.getElementById('segmentsInput');
+  const resultBox = document.getElementById('result');
+
+  let isSpinning = false;
+  let segments = [];
+  let colors = [];
+
+  /* Read query param "segments" (comma separated) */
+  function readSegmentsFromQuery(){
+    const qp = new URLSearchParams(location.search);
+    const s = qp.get('segments');
+    if(s){
+      const arr = s.split(',').map(x=>x.trim()).filter(x=>x);
+      if(arr.length >= 2) return arr;
+    }
+    return null;
+  }
+
+  function setupSegments(arr){
+    segments = arr.slice();
+    // assign colors repeating if needed
+    colors = [];
+    for(let i=0;i<segments.length;i++){
+      colors.push(defaultColors[i % defaultColors.length]);
+    }
+    renderWheel();
+  }
+
+  /* Build the conic-gradient + labels */
+  function renderWheel(){
+    const n = segments.length;
+    const angleStep = 360 / n;
+    // build gradient string
+    const stops = [];
+    for(let i=0;i<n;i++){
+      const start = i*angleStep;
+      const end = start + angleStep;
+      stops.push(`${colors[i]} ${start}deg ${end}deg`);
+    }
+    wheelEl.style.background = `conic-gradient(${stops.join(',')})`;
+
+    // create text labels positioned around the wheel
+    labelsContainer.innerHTML = '';
+    for(let i=0;i<n;i++){
+      const angle = (i * angleStep) + angleStep/2; // middle of segment
+      const lbl = document.createElement('div');
+      lbl.className = 'label';
+      lbl.textContent = segments[i];
+      // position: rotate around center then move outward
+      lbl.style.transform = `rotate(${angle}deg) translateX(${ Math.max( (parseFloat(getComputedStyle(wheelEl).width) || 200) * 0.32, 60)}px) rotate(${90 - angle}deg)`;
+      // we'll set font-size condtionally
+      labelsContainer.appendChild(lbl);
+    }
+    // update input placeholder & clear result
+    segmentsInput.placeholder = segments.join(', ');
+    resultBox.style.display = 'none';
+    resultBox.textContent = '';
+  }
+
+  /* Utility: pick random integer 0..n-1 */
+  function randInt(n){ return Math.floor(Math.random()*n); }
+
+  /* Spin logic: choose random target segment and animate */
+  function spin(randomSeed=null, duration=4000){
+    if(isSpinning) return;
+    isSpinning = true;
+    resultBox.style.display = 'none';
+
+    const n = segments.length;
+    // choose a random index
+    let chosenIndex = randomSeed;
+    if(chosenIndex === null) chosenIndex = randInt(n);
+
+    // Current rotation – read transform
+    const style = getComputedStyle(wheelEl);
+    const matrix = style.transform || style.webkitTransform || 'none';
+    let currentDeg = 0;
+    if(matrix !== 'none'){
+      const values = matrix.split('(')[1].split(')')[0].split(',');
+      const a = parseFloat(values[0]);
+      const b = parseFloat(values[1]);
+      currentDeg = Math.round(Math.atan2(b,a) * (180/Math.PI));
+    }
+
+    // Normalize to positive 0..360
+    currentDeg = ((currentDeg % 360) + 360) % 360;
+
+    // compute target such that the chosen segment lands under pointer at top (0deg)
+    const anglePer = 360 / n;
+    const targetMid = chosenIndex * anglePer + anglePer/2;
+    // We want wheel rotation so that targetMid aligns to 0deg (pointer). That means rotate to (360 - targetMid) (mod 360).
+    const finalAngle = 360 * (3 + Math.random()*2) + (360 - targetMid); // add 3-5 full rotations for fun
+    const rotateTo = finalAngle;
+
+    // animate using requestAnimationFrame for smoother easing
+    const start = performance.now();
+    const from = currentDeg;
+    const to = rotateTo;
+    const total = duration;
+
+    // easing function: cubic ease out
+    function easeOutCubic(t){ return (--t)*t*t+1; }
+
+    function frame(now){
+      const elapsed = now - start;
+      const t = Math.min(1, elapsed / total);
+      const eased = easeOutCubic(t);
+      const value = from + (to - from) * eased;
+      wheelEl.style.transform = `rotate(${value}deg)`;
+      if(t < 1){
+        requestAnimationFrame(frame);
+      } else {
+        isSpinning = false;
+        // compute actual landed index
+        const landedDeg = (value % 360 + 360) % 360;
+        // mid of chosen was targetMid; but compute index robustly
+        const index = Math.floor(((360 - landedDeg + anglePer/2) % 360) / anglePer);
+        showResult(index);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function showResult(index){
+    const label = segments[index] || '—';
+    resultBox.textContent = `You won: ${label}`;
+    resultBox.style.display = 'block';
+    // simple visual cue on center button
+    spinBtnCenter.animate([{ transform:'scale(1)' },{ transform:'scale(1.06)' },{ transform:'scale(1)' }],{duration:450,iterations:1});
+    // optional beep
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine'; o.frequency.value = 880;
+      g.gain.value = 0.001;
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
+      o.stop(ctx.currentTime + 0.35);
+    } catch(e){ /* audio may be blocked on some browsers without user interaction */ }
+  }
+
+  /* Quick-spin: shorter duration & random target */
+  function quickSpin(){
+    spin(null, 1800);
+  }
+
+  /* Bind events */
+  spinBtnCenter.addEventListener('click', ()=>{ spin(null, 4200); });
+  spinBtn.addEventListener('click', ()=>{ spin(null, 4200); });
+  quickSpinBtn.addEventListener('click', quickSpin);
+
+  applyBtn.addEventListener('click', ()=>{
+    const val = segmentsInput.value.trim();
+    if(!val){
+      alert('Type comma-separated segment labels, e.g. "Prize A, Prize B, Try Again"');
+      return;
+    }
+    const arr = val.split(',').map(s=>s.trim()).filter(s=>s);
+    if(arr.length < 2){ alert('Please provide at least 2 segments.'); return; }
+    setupSegments(arr);
+  });
+
+  /* Initialize: segments from query or default */
+  const fromQuery = readSegmentsFromQuery();
+  if(fromQuery) setupSegments(fromQuery);
+  else setupSegments(defaultSegments);
+
+  // Accessibility: keyboard support for spin (space/enter)
+  window.addEventListener('keydown', (e)=>{
+    if(e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      if(!isSpinning) spin(null, 4200);
+    }
+  });
+
+  // Make labels recalc their translate length on resize for better placement
+  window.addEventListener('resize', ()=>{ renderWheel(); });
+
+})();
+</script>
+</body>
+</html>

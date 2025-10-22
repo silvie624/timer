@@ -3,39 +3,41 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Spinning Wheel</title>
+<title>Spinning Wheel (Horizontal Labels)</title>
 <style>
-  :root{
+  :root {
     --wheel-size: min(480px, 88vw);
     --bg: #f6f7fb;
     --accent: #001e60;
     --text: #fff;
   }
-  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;color:#111}
+  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, sans-serif;color:#111}
   .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box}
   .card{width:100%;max-width:900px;background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(2,6,23,0.08);padding:18px;display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:center}
   @media (max-width:820px){ .card{grid-template-columns:1fr; } .controls{order:2} }
   .wheel-wrap{display:flex;align-items:center;justify-content:center}
   .wheel-viewport{width:var(--wheel-size);height:var(--wheel-size);position:relative;border-radius:50%;overflow:visible}
-  .wheel{
-    width:100%;height:100%;border-radius:50%;position:relative;transform:rotate(0deg);
-    box-shadow: 0 8px 24px rgba(2,6,23,0.12) inset;
-    transition:transform 0.6s cubic-bezier(.2,.8,.2,1);
-  }
+  .wheel{width:100%;height:100%;border-radius:50%;position:relative;transform:rotate(0deg);transition:transform 0.6s cubic-bezier(.2,.8,.2,1);box-shadow: 0 8px 24px rgba(2,6,23,0.12) inset;}
   .labels{position:absolute;inset:0;border-radius:50%;pointer-events:none}
   .label{
-    position:absolute;left:50%;top:50%;transform-origin:0 50%;
-    white-space:nowrap;font-weight:700;color:var(--text);text-shadow:0 1px 2px rgba(0,0,0,0.45);
-    padding:6px 10px;border-radius:8px;background:rgba(0,0,0,0.18);
-    display:inline-block;line-height:1;max-width:none;overflow:visible;
+    position:absolute;left:50%;top:50%;
+    transform-origin:center center;
+    white-space:nowrap;font-weight:700;color:var(--text);
+    background:rgba(0,0,0,0.3);
+    border-radius:6px;padding:6px 10px;
+    text-align:center;line-height:1;
   }
   .center{
-    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;
-    width:36%;max-width:160px;height:36%;max-height:160px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(180deg,var(--accent),#003a99);color:var(--text);font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.25);border:none;
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    z-index:6;width:36%;max-width:160px;height:36%;max-height:160px;
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,var(--accent),#003a99);
+    color:var(--text);font-weight:800;cursor:pointer;
+    box-shadow:0 6px 16px rgba(0,0,0,0.25);border:none;
   }
   .pointer{
-    position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:26px solid var(--accent);z-index:8;
+    position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+    width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:26px solid var(--accent);z-index:8;
   }
   .controls{padding:12px}
   .controls h3{margin:0 0 8px 0;font-size:16px;color:var(--accent)}
@@ -45,55 +47,41 @@
   .btn{background:var(--accent);color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:700}
   .btn.secondary{background:#f1f3f8;color:#001e60;border:1px solid #d8dbe8}
   .result{margin-top:12px;padding:12px;border-radius:8px;background:#f6f9ff;color:#002b66;font-weight:700;display:none}
-  .small{font-size:13px;color:#666;margin-top:6px}
   footer{grid-column:1/-1;text-align:center;margin-top:10px;font-size:12px;color:#889}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card" role="application" aria-label="Spinning wheel game">
-      <div class="wheel-wrap" aria-hidden="false">
-        <div class="wheel-viewport" aria-hidden="false">
-          <div class="pointer" aria-hidden="true"></div>
-          <div id="wheel" class="wheel" role="img" aria-label="Wheel"></div>
-          <div class="labels" id="labels" aria-hidden="true"></div>
-          <button id="spin" class="center" aria-live="polite">SPIN</button>
-        </div>
+<div class="wrap">
+  <div class="card">
+    <div class="wheel-wrap">
+      <div class="wheel-viewport">
+        <div class="pointer"></div>
+        <div id="wheel" class="wheel"></div>
+        <div class="labels" id="labels"></div>
+        <button id="spin" class="center">SPIN</button>
       </div>
+    </div>
 
-      <div class="controls">
-        <h3>Spinning Wheel</h3>
-        <p>Enter comma-separated labels for the wheel below, or use the defaults.</p>
-
-        <div class="input">
-          <input id="segmentsInput" placeholder="Prize 1, Prize 2, Prize 3, ..." aria-label="Segments input">
-          <button id="apply" class="btn secondary" aria-label="Apply segments">Apply</button>
-        </div>
-
-        <div style="display:flex;gap:8px">
-          <button id="spinBtn" class="btn" aria-label="Spin">Spin</button>
-          <button id="quickSpin" class="btn secondary" aria-label="Quick spin">Quick Spin</button>
-        </div>
-
-        <div class="small">You can also pass segments via URL query: <code>?segments=Apple,Banana,Cherry</code></div>
-
-        <div id="result" class="result" role="status" aria-live="polite"></div>
+    <div class="controls">
+      <h3>Spinning Wheel</h3>
+      <p>Enter comma-separated labels for the wheel below, or use the defaults.</p>
+      <div class="input">
+        <input id="segmentsInput" placeholder="Prize 1, Prize 2, Prize 3, ...">
+        <button id="apply" class="btn secondary">Apply</button>
       </div>
-
-      <footer>Made with ❤️ — Embed with an iframe anywhere</footer>
+      <div style="display:flex;gap:8px">
+        <button id="spinBtn" class="btn">Spin</button>
+        <button id="quickSpin" class="btn secondary">Quick Spin</button>
+      </div>
+      <div id="result" class="result"></div>
     </div>
   </div>
+</div>
 
 <script>
 (function(){
-  /* -----------------------
-     Config & helpers
-     ----------------------- */
   const defaultSegments = ["$5","$10","Try Again","$50","Free Ship","$100","Extra Spin","Mystery"];
-  const defaultColors = [
-    "#FF7F50","#FFB347","#FFD93D","#8BD3DD","#66CDAA","#8FBC8F","#C19AB7","#FF9AA2"
-  ];
-
+  const defaultColors = ["#FF7F50","#FFB347","#FFD93D","#8BD3DD","#66CDAA","#8FBC8F","#C19AB7","#FF9AA2"];
   const wheelEl = document.getElementById('wheel');
   const labelsContainer = document.getElementById('labels');
   const spinBtnCenter = document.getElementById('spin');
@@ -102,20 +90,7 @@
   const applyBtn = document.getElementById('apply');
   const segmentsInput = document.getElementById('segmentsInput');
   const resultBox = document.getElementById('result');
-
-  let isSpinning = false;
-  let segments = [];
-  let colors = [];
-
-  function readSegmentsFromQuery(){
-    const qp = new URLSearchParams(location.search);
-    const s = qp.get('segments');
-    if(s){
-      const arr = s.split(',').map(x=>x.trim()).filter(x=>x);
-      if(arr.length >= 2) return arr;
-    }
-    return null;
-  }
+  let isSpinning=false, segments=[], colors=[];
 
   function setupSegments(arr){
     segments = arr.slice();
@@ -126,182 +101,89 @@
     renderWheel();
   }
 
-  /* Improved renderWheel:
-     - builds conic-gradient
-     - positions labels after layout using requestAnimationFrame
-     - auto-fits long text to the slice arc width by shrinking font size
-  */
   function renderWheel(){
     const n = segments.length;
-    const angleStep = 360 / n;
-
-    // Build gradient
+    const angleStep = 360/n;
     const stops = [];
     for(let i=0;i<n;i++){
-      const start = i * angleStep;
-      const end = start + angleStep;
+      const start=i*angleStep, end=start+angleStep;
       stops.push(`${colors[i]} ${start}deg ${end}deg`);
     }
     wheelEl.style.background = `conic-gradient(${stops.join(',')})`;
+    labelsContainer.innerHTML='';
 
-    // Clear labels then position after layout
-    labelsContainer.innerHTML = '';
-
-    // Use rAF to ensure layout/styling is measured correctly
-    requestAnimationFrame(() => {
-      const wheelRect = wheelEl.getBoundingClientRect();
-      const radius = wheelRect.width / 2;
-      const translateBase = radius * 0.42; // distance from center to place labels
-      const arcPerRadians = (angleStep * Math.PI) / 180; // radians per slice
-      const maxLabelArcFraction = 0.72; // fraction of arc allowed for label width
-
+    requestAnimationFrame(()=>{
+      const rect=wheelEl.getBoundingClientRect();
+      const radius=rect.width/2;
       for(let i=0;i<n;i++){
-        const angle = i * angleStep + angleStep / 2;
-        const lbl = document.createElement('div');
-        lbl.className = 'label';
-        lbl.textContent = segments[i];
-
-        // append first so we can measure scrollWidth
+        const angle=(i*angleStep)+(angleStep/2);
+        const lbl=document.createElement('div');
+        lbl.className='label';
+        lbl.textContent=segments[i];
+        // distance from center
+        const dist = radius*0.65;
+        const rad = angle*Math.PI/180;
+        const x = dist * Math.sin(rad);
+        const y = -dist * Math.cos(rad);
+        lbl.style.left=`calc(50% + ${x}px)`;
+        lbl.style.top=`calc(50% + ${y}px)`;
+        lbl.style.transform=`translate(-50%, -50%)`; // keep horizontal
         labelsContainer.appendChild(lbl);
-
-        // compute permitted max width along arc for this slice (approx)
-        const arcLength = arcPerRadians * radius; // length of slice arc at outer radius
-        const maxWidth = Math.max(40, arcLength * maxLabelArcFraction); // don't allow too small
-
-        // start with a base font size and shrink until it fits
-        let fontSize = 14; // px
-        lbl.style.fontSize = fontSize + 'px';
-        // ensure the label has max-width to measure breaking
-        // use inline-block so scrollWidth is correct
-        // shrink until fits or min size reached
-        while(lbl.scrollWidth > maxWidth && fontSize > 8){
-          fontSize -= 1;
-          lbl.style.fontSize = fontSize + 'px';
-        }
-
-        // style translation/rotation: rotate(angle) translateX(distance) rotate(inner)
-        // place from center then rotate label back upright-ish
-        const translatePx = translateBase;
-        const rotateOut = angle;
-        const rotateBack = 90 - angle;
-        // translate along x after rotation, then rotate back so text is horizontal-ish
-        lbl.style.transform = `rotate(${rotateOut}deg) translateX(${translatePx}px) rotate(${rotateBack}deg)`;
-
-        // optionally, adjust padding if text is short
-        if(lbl.scrollWidth < 0.5 * maxWidth){
-          lbl.style.padding = '6px 12px';
-        } else {
-          lbl.style.padding = '6px 8px';
-        }
       }
-
-      // reset result display
-      resultBox.style.display = "none";
-      resultBox.textContent = "";
     });
   }
 
-  function randInt(n){ return Math.floor(Math.random()*n); }
-
-  function spin(randomSeed=null, duration=4200){
-    if(isSpinning) return;
-    isSpinning = true;
-    resultBox.style.display = 'none';
-
-    const n = segments.length;
-    let chosenIndex = randomSeed;
-    if(chosenIndex === null) chosenIndex = randInt(n);
-
-    // read current rotation
-    const style = getComputedStyle(wheelEl);
-    const matrix = style.transform || style.webkitTransform || 'none';
-    let currentDeg = 0;
-    if(matrix !== 'none'){
-      const values = matrix.split('(')[1].split(')')[0].split(',');
-      const a = parseFloat(values[0]);
-      const b = parseFloat(values[1]);
-      currentDeg = Math.round(Math.atan2(b,a) * (180/Math.PI));
+  function randInt(n){return Math.floor(Math.random()*n);}
+  function spin(randomSeed=null,duration=4200){
+    if(isSpinning)return;
+    isSpinning=true;resultBox.style.display='none';
+    const n=segments.length;
+    let chosenIndex=randomSeed;
+    if(chosenIndex===null)chosenIndex=randInt(n);
+    const style=getComputedStyle(wheelEl);
+    const matrix=style.transform||'none';
+    let currentDeg=0;
+    if(matrix!=='none'){
+      const values=matrix.split('(')[1].split(')')[0].split(',');
+      const a=parseFloat(values[0]);const b=parseFloat(values[1]);
+      currentDeg=Math.round(Math.atan2(b,a)*(180/Math.PI));
     }
-    currentDeg = ((currentDeg % 360) + 360) % 360;
-
-    const anglePer = 360 / n;
-    const targetMid = chosenIndex * anglePer + anglePer/2;
-    const finalAngle = 360 * (3 + Math.random()*2) + (360 - targetMid);
-    const rotateTo = finalAngle;
-
-    const start = performance.now();
-    const from = currentDeg;
-    const to = rotateTo;
-    const total = duration;
-
-    function easeOutCubic(t){ return (--t)*t*t+1; }
-
+    currentDeg=((currentDeg%360)+360)%360;
+    const anglePer=360/n;
+    const targetMid=chosenIndex*anglePer+anglePer/2;
+    const finalAngle=360*(3+Math.random()*2)+(360-targetMid);
+    const from=currentDeg,to=finalAngle,total=duration,start=performance.now();
+    function easeOutCubic(t){return(--t)*t*t+1;}
     function frame(now){
-      const elapsed = now - start;
-      const t = Math.min(1, elapsed / total);
-      const eased = easeOutCubic(t);
-      const value = from + (to - from) * eased;
-      wheelEl.style.transform = `rotate(${value}deg)`;
-      if(t < 1){
-        requestAnimationFrame(frame);
-      } else {
-        isSpinning = false;
-        const landedDeg = (value % 360 + 360) % 360;
-        const index = Math.floor(((360 - landedDeg + anglePer/2) % 360) / anglePer);
-        showResult(index);
+      const t=Math.min(1,(now-start)/total);
+      const eased=easeOutCubic(t);
+      const value=from+(to-from)*eased;
+      wheelEl.style.transform=`rotate(${value}deg)`;
+      if(t<1)requestAnimationFrame(frame);
+      else{
+        isSpinning=false;
+        const landedDeg=(value%360+360)%360;
+        const index=Math.floor(((360-landedDeg+anglePer/2)%360)/anglePer);
+        resultBox.textContent=`You won: ${segments[index]}`;
+        resultBox.style.display='block';
       }
     }
     requestAnimationFrame(frame);
   }
 
-  function showResult(index){
-    const label = segments[index] || '—';
-    resultBox.textContent = `You won: ${label}`;
-    resultBox.style.display = 'block';
-    spinBtnCenter.animate([{ transform:'scale(1)' },{ transform:'scale(1.06)' },{ transform:'scale(1)' }],{duration:450,iterations:1});
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.type = 'sine'; o.frequency.value = 880;
-      g.gain.value = 0.001;
-      o.start();
-      g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
-      o.stop(ctx.currentTime + 0.35);
-    } catch(e){}
-  }
-
-  function quickSpin(){ spin(null, 1800); }
-
-  // events
-  spinBtnCenter.addEventListener('click', ()=>{ spin(null, 4200); });
-  spinBtn.addEventListener('click', ()=>{ spin(null, 4200); });
-  quickSpinBtn.addEventListener('click', quickSpin);
-  applyBtn.addEventListener('click', ()=>{
-    const val = segmentsInput.value.trim();
-    if(!val){ alert('Type comma-separated segment labels, e.g. "Prize A, Prize B, Try Again"'); return; }
-    const arr = val.split(',').map(s=>s.trim()).filter(s=>s);
-    if(arr.length < 2){ alert('Please provide at least 2 segments.'); return; }
-    setupSegments(arr);
+  function quickSpin(){spin(null,1800);}
+  spinBtnCenter.addEventListener('click',()=>spin());
+  spinBtn.addEventListener('click',()=>spin());
+  quickSpinBtn.addEventListener('click',quickSpin);
+  applyBtn.addEventListener('click',()=>{
+    const arr=segmentsInput.value.split(',').map(s=>s.trim()).filter(s=>s);
+    if(arr.length>=2)setupSegments(arr);else alert('Please enter at least 2 segments.');
   });
-
-  const fromQuery = readSegmentsFromQuery();
-  if(fromQuery) setupSegments(fromQuery);
-  else setupSegments(defaultSegments);
-
-  window.addEventListener('keydown', (e)=>{
-    if(e.key === ' ' || e.key === 'Enter') {
-      e.preventDefault();
-      if(!isSpinning) spin(null, 4200);
-    }
-  });
-
-  window.addEventListener('resize', ()=>{ renderWheel(); });
-
+  setupSegments(defaultSegments);
+  window.addEventListener('resize',renderWheel);
 })();
 </script>
 </body>
 </html>
+
 
